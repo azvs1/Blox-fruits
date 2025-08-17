@@ -1,0 +1,483 @@
+pcall(function()game:GetService("StarterGui"):SetCore("SendNotification",{Title="Hello",Text="Your journey to rage quit Blox Fruits players",Duration=5})end)
+local gui=Instance.new("ScreenGui")
+gui.Name="CJ_MainUI"
+gui.Parent=game:GetService("CoreGui")
+
+local icon=Instance.new("TextButton")
+icon.Parent=gui
+icon.Size=UDim2.new(0,35,0,35)
+icon.Position=UDim2.new(0,20,0.5,-20)
+icon.BackgroundColor3=Color3.fromRGB(30,30,30)
+icon.Text="A"
+icon.TextScaled=true
+icon.Font=Enum.Font.GothamBold
+icon.TextColor3=Color3.new(1,1,1)
+icon.Draggable=true
+icon.Active=true
+Instance.new("UICorner",icon)
+
+local main=Instance.new("Frame")
+main.Parent=gui
+main.Size=UDim2.new(0,220,0,350)
+main.Position=UDim2.new(0,70,0.5,-175)
+main.BackgroundColor3=Color3.fromRGB(25,25,30)
+main.Visible=false
+main.Active=true
+main.Draggable=true
+Instance.new("UICorner",main)
+
+local titleBar=Instance.new("Frame",main)
+titleBar.Size=UDim2.new(1,0,0,30)
+titleBar.BackgroundTransparency=1
+
+local closeBtn=Instance.new("TextButton",titleBar)
+closeBtn.Size=UDim2.new(0,25,0,25)
+closeBtn.Position=UDim2.new(1,-30,0,2)
+closeBtn.BackgroundTransparency=1
+closeBtn.Text="X"
+closeBtn.Font=Enum.Font.GothamBold
+closeBtn.TextScaled=true
+closeBtn.TextColor3=Color3.fromRGB(255,80,80)
+closeBtn.MouseButton1Click:Connect(function()
+    main.Visible=false
+    icon.Text="CJ"
+end)
+
+local scrollFrame=Instance.new("ScrollingFrame",main)
+scrollFrame.Size=UDim2.new(1,-8,1,-35)
+scrollFrame.Position=UDim2.new(0,4,0,32)
+scrollFrame.CanvasSize=UDim2.new(0,0,0,0)
+scrollFrame.ScrollBarThickness=4
+scrollFrame.BackgroundTransparency=1
+
+local layout=Instance.new("UIListLayout",scrollFrame)
+layout.Padding=UDim.new(0,8)
+layout.SortOrder=Enum.SortOrder.LayoutOrder
+
+icon.MouseButton1Click:Connect(function()
+    main.Visible=not main.Visible
+    icon.Text=main.Visible and" CJ"or"CJ"
+end)
+
+local function createBtn(n,cb)
+    local b=Instance.new("TextButton",scrollFrame)
+    b.Size=UDim2.new(1,0,0,35)
+    b.BackgroundColor3=Color3.fromRGB(40,40,45)
+    b.Text=n
+    b.Font=Enum.Font.GothamBold
+    b.TextScaled=true
+    b.TextColor3=Color3.new(1,1,1)
+    Instance.new("UICorner",b)
+    b.MouseButton1Click:Connect(function()
+        cb(b)
+    end)
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scrollFrame.CanvasSize=UDim2.new(0,0,0,layout.AbsoluteContentSize.Y)
+    end)
+    return b
+end
+
+local speedEnabled,speedConn,speedInput
+local wallwalkEnabled,wallwalkConn
+local jumpEnabled,jumpInput,jumpConn
+local flyEnabled,flyConn
+local defaultSpeed=16
+local defaultJump=50
+local customSpeed=50
+local customJumpPower=100
+
+local function toggleSpeed(s,b,cs)
+    local p=game:GetService("Players").LocalPlayer
+    local h=(p.Character or p.CharacterAdded:Wait()):WaitForChild("Humanoid")
+    if speedConn then
+        speedConn:Disconnect()
+        speedConn=nil
+    end
+    if s then
+        h.WalkSpeed=cs or 50
+        speedConn=h:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if h.WalkSpeed~=(cs or 50)then
+                h.WalkSpeed=cs or 50
+            end
+        end)
+        b.Text="SPEED🏃: ON ("..(cs or 50)..")"
+    else
+        h.WalkSpeed=defaultSpeed
+        b.Text="SPEED🏃: OFF"
+    end
+end
+
+createBtn("SPEED🏃: OFF",function(b)
+    if not speedInput then
+        speedInput=Instance.new("TextBox")
+        speedInput.Parent=b
+        speedInput.Size=UDim2.new(0.5,0,1,0)
+        speedInput.Position=UDim2.new(0.5,0,0,0)
+        speedInput.BackgroundColor3=Color3.fromRGB(50,50,50)
+        speedInput.TextColor3=Color3.new(1,1,1)
+        speedInput.PlaceholderText="Enter speed"
+        speedInput.Font=Enum.Font.Gotham
+        speedInput.TextScaled=true
+        Instance.new("UICorner",speedInput)
+        speedInput.FocusLost:Connect(function()
+            local cs=tonumber(speedInput.Text)
+            if cs and cs>0 then
+                speedEnabled=true
+                customSpeed=cs
+                toggleSpeed(true,b,cs)
+            end
+            speedInput:Destroy()
+            speedInput=nil
+        end)
+    else
+        speedEnabled=false
+        toggleSpeed(false,b)
+        speedInput:Destroy()
+        speedInput=nil
+    end
+end)
+
+local function toggleWallwalker(s,b)
+    local p=game:GetService("Players").LocalPlayer
+    if wallwalkConn then
+        wallwalkConn:Disconnect()
+        wallwalkConn=nil
+    end
+    if s then
+        wallwalkConn=game:GetService("RunService").Stepped:Connect(function()
+            local c=p.Character
+            if c then
+                for _,v in pairs(c:GetDescendants())do
+                    if v:IsA("BasePart")then
+                        v.CanCollide=false
+                    end
+                end
+            end
+        end)
+        b.Text="WALLWALKER🧱: ON"
+    else
+        local c=p.Character
+        if c then
+            for _,v in pairs(c:GetDescendants())do
+                if v:IsA("BasePart")then
+                    v.CanCollide=true
+                end
+            end
+        end
+        b.Text="WALLWALKER🧱: OFF"
+    end
+end
+
+createBtn("WALLWALKER🧱: OFF",function(b)
+    wallwalkEnabled=not wallwalkEnabled
+    toggleWallwalker(wallwalkEnabled,b)
+end)
+
+local function toggleJump(s,b,pw)
+    local p=game:GetService("Players").LocalPlayer
+    local h=(p.Character or p.CharacterAdded:Wait()):FindFirstChildOfClass("Humanoid")
+    if h then
+        if jumpConn then
+            jumpConn:Disconnect()
+            jumpConn=nil
+        end
+        if s then
+            h.JumpPower=pw or 100
+            jumpConn=h:GetPropertyChangedSignal("JumpPower"):Connect(function()
+                if h.JumpPower~=(pw or 100)then
+                    h.JumpPower=pw or 100
+                end
+            end)
+            b.Text="JUMP⚡: ON ("..(pw or 100)..")"
+        else
+            h.JumpPower=defaultJump -- Reset to default jump power when toggled off
+            b.Text="JUMP⚡: OFF"
+        end
+    end
+end
+
+createBtn("JUMP⚡: OFF",function(b)
+    if not jumpInput then
+        jumpInput=Instance.new("TextBox")
+        jumpInput.Parent=b
+        jumpInput.Size=UDim2.new(0.5,0,1,0)
+        jumpInput.Position=UDim2.new(0.5,0,0,0)
+        jumpInput.BackgroundColor3=Color3.fromRGB(50,50,50)
+        jumpInput.TextColor3=Color3.new(1,1,1)
+        jumpInput.PlaceholderText="Jump power"
+        jumpInput.Font=Enum.Font.Gotham
+        jumpInput.TextScaled=true
+        Instance.new("UICorner",jumpInput)
+        jumpInput.FocusLost:Connect(function()
+            local p=tonumber(jumpInput.Text)
+            if p and p>0 then
+                jumpEnabled=true
+                customJumpPower=p
+                toggleJump(true,b,p)
+            end
+            jumpInput:Destroy()
+            jumpInput=nil
+        end)
+    else
+        jumpEnabled=false
+        toggleJump(false,b)
+        jumpInput:Destroy()
+        jumpInput=nil
+    end
+end)
+
+local function toggleFly(s,b)
+    local ui=game:GetService("UserInputService")
+    local p=game:GetService("Players").LocalPlayer
+    if flyConn then
+        flyConn:Disconnect()
+        flyConn=nil
+    end
+    if s then
+        flyConn=ui.JumpRequest:Connect(function()
+            local c=p.Character
+            if c then
+                local h=c:FindFirstChildOfClass("Humanoid")
+                if h then
+                    h:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end
+        end)
+        b.Text="FLY👼: ON"
+    else
+        b.Text="FLY👼: OFF"
+    end
+end
+
+createBtn("FLY👼: OFF",function(b)
+    flyEnabled=not flyEnabled
+    toggleFly(flyEnabled,b)
+end)
+
+createBtn("HITBOX🥊",function()
+    local Pl=game:GetService("Players")
+    local RS=game:GetService("RunService")
+    local lp=Pl.LocalPlayer
+    local on=false
+    local sz=5
+    local orig={}
+    local hbGui=Instance.new("ScreenGui",game.CoreGui)
+    hbGui.Name="HitboxExpanderUI"
+    local mf=Instance.new("Frame",hbGui)
+    mf.Size=UDim2.new(0,180,0,120)
+    mf.Position=UDim2.new(0.5,-90,0,10)
+    mf.BackgroundColor3=Color3.fromRGB(20,20,20)
+    mf.BackgroundTransparency=0.2
+    mf.Active=true
+    mf.Draggable=true
+    Instance.new("UICorner",mf).CornerRadius=UDim.new(0,8)
+    local tb=Instance.new("TextButton",mf)
+    tb.Size=UDim2.new(1,-20,0,30)
+    tb.Position=UDim2.new(0,10,0,10)
+    tb.Text="Hitbox: OFF"
+    tb.BackgroundColor3=Color3.fromRGB(40,40,40)
+    tb.TextColor3=Color3.new(1,1,1)
+    tb.TextScaled=true
+    tb.Font=Enum.Font.GothamBold
+    local sb=Instance.new("TextBox",mf)
+    sb.Size=UDim2.new(1,-20,0,30)
+    sb.Position=UDim2.new(0,10,0,50)
+    sb.Text=tostring(sz)
+    sb.PlaceholderText="Size (1-100)"
+    sb.BackgroundColor3=Color3.fromRGB(50,50,50)
+    sb.TextColor3=Color3.new(1,1,1)
+    sb.TextScaled=true
+    sb.ClearTextOnFocus=false
+    sb.Font=Enum.Font.Gotham
+    local cb=Instance.new("TextButton",mf)
+    cb.Size=UDim2.new(0,25,0,25)
+    cb.Position=UDim2.new(1,-30,0,5)
+    cb.Text="X"
+    cb.BackgroundColor3=Color3.fromRGB(100,30,30)
+    cb.TextColor3=Color3.new(1,1,1)
+    cb.TextScaled=true
+    cb.Font=Enum.Font.GothamBold
+    Instance.new("UICorner",cb).CornerRadius=UDim.new(0,4)
+    local mt=Instance.new("TextButton",hbGui)
+    mt.Size=UDim2.new(0,50,0,30)
+    mt.Position=UDim2.new(0,10,0.5,-90)
+    mt.Text="HB"
+    mt.BackgroundColor3=Color3.fromRGB(70,70,70)
+    mt.TextColor3=Color3.new(1,1,1)
+    mt.TextScaled=true
+    mt.Font=Enum.Font.GothamBold
+    mt.Visible=false
+    mt.Active=true
+    mt.Draggable=true
+    Instance.new("UICorner",mt).CornerRadius=UDim.new(0,6)
+    local function restore()
+        for _,p in pairs(Pl:GetPlayers())do
+            if p~=lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart")then
+                local hrp=p.Character.HumanoidRootPart
+                if orig[p]then
+                    hrp.Size=orig[p]
+                    hrp.Transparency=1
+                    hrp.Material=Enum.Material.Plastic
+                    hrp.CanCollide=true
+                    orig[p]=nil
+                end
+            end
+        end
+    end
+    local function update()
+        if on then
+            for _,p in pairs(Pl:GetPlayers())do
+                if p~=lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart")then
+                    local hrp=p.Character.HumanoidRootPart
+                    if not orig[p]then
+                        orig[p]=hrp.Size
+                    end
+                    hrp.Size=Vector3.new(sz,sz,sz)
+                    hrp.Transparency=0.7
+                    hrp.Material=Enum.Material.ForceField
+                    hrp.CanCollide=false
+                end
+            end
+        else
+            restore()
+        end
+    end
+    tb.MouseButton1Click:Connect(function()
+        on=not on
+        tb.Text=on and"Hitbox: ON"or"Hitbox: OFF"
+        if not on then
+            restore()
+        end
+    end)
+    sb.FocusLost:Connect(function()
+        local v=tonumber(sb.Text)
+        if v and v>=1 and v<=100 then
+            sz=v
+        else
+            sb.Text=tostring(sz)
+        end
+    end)
+    cb.MouseButton1Click:Connect(function()
+        mf.Visible=false
+        mt.Visible=true
+    end)
+    mt.MouseButton1Click:Connect(function()
+        mf.Visible=true
+        mt.Visible=false
+    end)
+    RS.RenderStepped:Connect(update)
+end)
+
+createBtn("REDZHUB☠️",function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Scripts/refs/heads/main/main.luau"))()
+end)
+
+createBtn("CAMLOCK 🎯",function()
+    local Pl=game:GetService("Players")
+    local RS=game:GetService("RunService")
+    local lp=Pl.LocalPlayer
+    local on=false
+    local tgt=nil
+    local cg=Instance.new("ScreenGui",game.CoreGui)
+    cg.Name="CentujasCamlock"
+    local cb=Instance.new("TextButton",cg)
+    cb.Size=UDim2.new(0,180,0,50)
+    cb.Position=UDim2.new(0.5,-90,0,10)
+    cb.Text="CENTUJAS: OFF"
+    cb.BackgroundColor3=Color3.fromRGB(40,40,40)
+    cb.TextColor3=Color3.fromRGB(255,255,255)
+    cb.TextScaled=true
+    cb.Font=Enum.Font.GothamBold
+    cb.Draggable=true
+    cb.Active=true
+    Instance.new("UICorner",cb).CornerRadius=UDim.new(0,8)
+    cb.MouseButton1Click:Connect(function()
+        on=not on
+        cb.Text=on and"CENTUJAS: ON"or"CENTUJAS: OFF"
+        if on then
+            local cst=nil
+            local srt=math.huge
+            local vs=workspace.CurrentCamera.ViewportSize
+            local ctr=Vector2.new(vs.X/2,vs.Y/2)
+            for _,p in pairs(Pl:GetPlayers())do
+                if p~=lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart")then
+                    local pos,onScr=workspace.CurrentCamera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+                    if onScr then
+                        local dist=(ctr-Vector2.new(pos.X,pos.Y)).Magnitude
+                        if dist<srt then
+                            srt=dist
+                            cst=p
+                        end
+                    end
+                end
+            end
+            tgt=cst
+        else
+            tgt=nil
+        end
+    end)
+    RS.RenderStepped:Connect(function()
+        if on and tgt and tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart")then
+            workspace.CurrentCamera.CFrame=CFrame.new(workspace.CurrentCamera.CFrame.Position,tgt.Character.HumanoidRootPart.Position)
+        end
+    end)
+end)
+
+local pl=game:GetService("Players").LocalPlayer
+pl.CharacterAdded:Connect(function(c)
+    local h=c:WaitForChild("Humanoid")
+    if speedEnabled then
+        h.WalkSpeed=customSpeed
+        if speedConn then
+            speedConn:Disconnect()
+        end
+        speedConn=h:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if h.WalkSpeed~=customSpeed then
+                h.WalkSpeed=customSpeed
+            end
+        end)
+    end
+    if jumpEnabled then
+        h.JumpPower=customJumpPower
+        if jumpConn then
+            jumpConn:Disconnect()
+        end
+        jumpConn=h:GetPropertyChangedSignal("JumpPower"):Connect(function()
+            if h.JumpPower~=customJumpPower then
+                h.JumpPower=customJumpPower
+            end
+        end)
+    else
+        h.JumpPower=defaultJump -- Reset to default jump power when jump is off
+    end
+    if flyEnabled then
+        if flyConn then
+            flyConn:Disconnect()
+            flyConn=nil
+        end
+        local ui=game:GetService("UserInputService")
+        flyConn=ui.JumpRequest:Connect(function()
+            if c:IsDescendantOf(workspace)then
+                local h=c:FindFirstChildOfClass("Humanoid")
+                if h then
+                    h:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end
+        end)
+    end
+    if wallwalkEnabled then
+        if wallwalkConn then
+            wallwalkConn:Disconnect()
+            wallwalkConn=nil
+        end
+        wallwalkConn=game:GetService("RunService").Stepped:Connect(function()
+            if c:IsDescendantOf(workspace)then
+                for _,v in pairs(c:GetDescendants())do
+                    if v:IsA("BasePart")then
+                        v.CanCollide=false
+                    end
+                end
+            end
+        end)
+    end
+end)
